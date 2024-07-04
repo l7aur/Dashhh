@@ -27,7 +27,7 @@ int main() {
     Texture2D hazard = LoadTexture("textures\\12_nebula_spritesheet.png");
     Rectangle hazard_rect = {0.0f, 0.0f, hazard.width / 8.0f, hazard.height / 8.0f};
     Vector2 hazard_pos = {window_width, window_height - hazard_rect.height};
-    float hazard_ox_velocity = -10; //must be negative 
+    float hazard_ox_velocity = -1000; //must be negative 
 
     //scarfy variables
     float scarfy_running_time = 0.0f;
@@ -62,13 +62,13 @@ int main() {
             scarfy_pos.y = 0;
             current_velocity = STARTING_VELOCITY;
         }
-        hazard_pos.x += hazard_ox_velocity;
+        hazard_pos.x += hazard_ox_velocity * dT;
         
         scarfy_rect.x = scarfy_frame * scarfy.width / 6;
         hazard_rect.x = hazard_frame * hazard.width / 8;
         hazard_rect.y = hazard_frame_go_down * hazard.height / 8;
         DrawTextureRec(scarfy, scarfy_rect, scarfy_pos, WHITE);
-        DrawTextureRec(hazard, hazard_rect, hazard_pos, WHITE);
+        DrawTextureRec(hazard, hazard_rect, hazard_pos, BLUE);
         if(scarfy_running_time >= scarfy_update_time) {
             scarfy_frame = (scarfy_frame + 1) % 6;
             scarfy_running_time = 0.0f;
