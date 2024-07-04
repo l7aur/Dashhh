@@ -2,9 +2,9 @@
 #include <iostream>
 
 #define BACKGROUND_COLOR BLACK
-#define STARTING_VELOCITY 0
-#define UPWARD_IMPULSE -200
-#define GRAVITY 100
+#define STARTING_VELOCITY 0.0f
+#define UPWARD_IMPULSE -2'000.0f
+#define GRAVITY 8'000.0f
 
 const int window_height = 600;
 const int window_width = 800;
@@ -14,7 +14,7 @@ int main() {
     SetTargetFPS(80);
 
     bool stop = false;
-    int current_velocity = STARTING_VELOCITY;
+    float current_velocity = STARTING_VELOCITY;
 
     Texture2D scarfy = LoadTexture("textures/scarfy.png");
     Rectangle scarfy_rect;
@@ -44,9 +44,11 @@ int main() {
             scarfy_pos.y = 0;
             current_velocity = STARTING_VELOCITY;
         }
-
+        
         DrawTextureRec(scarfy, scarfy_rect, scarfy_pos, WHITE);
         current_velocity += GRAVITY * dT;
+
+        std::cout<< current_velocity << '\n';
 
         stop = WindowShouldClose();
         EndDrawing();
