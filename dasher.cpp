@@ -15,6 +15,9 @@ int main() {
 
     bool stop = false;
     float current_velocity = STARTING_VELOCITY;
+    int frame = 0;
+    const float update_time = 1.0 / 12.0;
+    float running_time = 0.0;
 
     Texture2D scarfy = LoadTexture("textures/scarfy.png");
     Rectangle scarfy_rect;
@@ -30,10 +33,12 @@ int main() {
         ClearBackground(BACKGROUND_COLOR);
 
         float dT = GetFrameTime();
+        running_time += dT;
 
         if(IsKeyPressed(KEY_SPACE) && scarfy_pos.y == window_height - scarfy.height) {
             current_velocity = UPWARD_IMPULSE;
         }
+        current_velocity += GRAVITY * dT;
 
         scarfy_pos.y += current_velocity * dT;
         if(scarfy_pos.y > window_height - scarfy.height) {
@@ -45,10 +50,12 @@ int main() {
             current_velocity = STARTING_VELOCITY;
         }
         
+        scarfy_rect.x = frame * scarfy.width / 6;
         DrawTextureRec(scarfy, scarfy_rect, scarfy_pos, WHITE);
-        current_velocity += GRAVITY * dT;
-
-        std::cout<< current_velocity << '\n';
+        if(running_time >= update_time) {
+            frame = (frame + 1) % 6;
+            running_time = 0.0f;
+        }
 
         stop = WindowShouldClose();
         EndDrawing();
