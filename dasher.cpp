@@ -7,10 +7,20 @@
 #define GRAVITY 8'000.0f
 #define HAZARD_COOLDOWN_TIME 3.0f
 
+struct animation_data {
+    Rectangle rectangle;
+    Vector2 position;
+    int frame;
+    float update_time;
+    float running_time;
+};
+
 const int window_height = 600;
 const int window_width = 800;
 const float scarfy_update_time = 1.0 / 12.0;
-const float hazard_update_time = 1.0 / 16.0;
+const float hazard_update_time = 1.0 / 32.0;
+
+
 
 int main() {
     InitWindow(window_width, window_height, "DASHHH");
@@ -19,71 +29,74 @@ int main() {
     bool stop = false;
     float current_velocity = STARTING_VELOCITY;
     float global_running_time = 0.0f;
+    float hazard_cooldown_time = 0.0f; //how much until next hazard appears
 
     //hazard variables
-    float hazard_cooldown_time = 0.0f;
-    int hazard_frame = 0;
-    int hazard_frame_go_down = 0;
     Texture2D hazard = LoadTexture("textures\\12_nebula_spritesheet.png");
-    Rectangle hazard_rect = {0.0f, 0.0f, hazard.width / 8.0f, hazard.height / 8.0f};
-    Vector2 hazard_pos = {window_width, window_height - hazard_rect.height};
     float hazard_ox_velocity = -1000; //must be negative 
+    animation_data hazard_data = {
+        {0.0f, 0.0f, hazard.width / 8.0f, hazard.height / 8.0f},    //rectangle
+        {window_width, window_height - hazard_data.rectangle.height},   //position
+        0,  //frame
+        0.0f,   //update time
+        0.0f    //running time
+    };
 
     //scarfy variables
-    float scarfy_running_time = 0.0f;
-    int scarfy_frame = 0;
     Texture2D scarfy = LoadTexture("textures\\scarfy.png");
-    Rectangle scarfy_rect = {0.0f, 0.0f, scarfy.width / 6.0f, (float)scarfy.height};
-    Vector2 scarfy_pos = {(window_width - scarfy_rect.width) / 2, window_height - scarfy_rect.height};
-
+    animation_data scarfy_data = {
+        {0.0f, 0.0f, scarfy.width / 6.0f, (float)scarfy.height},    //rectangle
+        {(window_width - scarfy_data.rectangle.width) / 2, window_height - scarfy_data.rectangle.height},   //position
+        0, //frame
+        0.0f, //update time
+        0.0f //running time
+    };
+    
     while(!stop) {
         BeginDrawing();
         ClearBackground(BACKGROUND_COLOR);
 
         float dT = GetFrameTime();
 
-        if(scarfy_pos.y == window_height - scarfy.height)
-            scarfy_running_time += dT;
+        if(scarfy_data.position.y == window_height - scarfy.height)
+            scarfy_data.running_time += dT;
 
         global_running_time += dT;
         hazard_cooldown_time += dT;
 
-        if(IsKeyPressed(KEY_SPACE) && scarfy_pos.y == window_height - scarfy.height) {
+        if(IsKeyPressed(KEY_SPACE) && scarfy_data.position.y == window_height - scarfy.height) {
             current_velocity = UPWARD_IMPULSE;
         }
         current_velocity += GRAVITY * dT;
 
-        scarfy_pos.y += current_velocity * dT;
-        if(scarfy_pos.y > window_height - scarfy.height) {
-            scarfy_pos.y = window_height - scarfy.height;
+        scarfy_data.position.y += current_velocity * dT;
+        if(scarfy_data.position.y > window_height - scarfy.height) {
+            scarfy_data.position.y = window_height - scarfy.height;
             current_velocity = STARTING_VELOCITY;
         }
-        if(scarfy_pos.y < 0) {
-            scarfy_pos.y = 0;
+        if(scarfy_data.position.y < 0) {
+            scarfy_data.position.y = 0;
             current_velocity = STARTING_VELOCITY;
         }
-        hazard_pos.x += hazard_ox_velocity * dT;
+        hazard_data.position.x += hazard_ox_velocity * dT;
         
-        scarfy_rect.x = scarfy_frame * scarfy.width / 6;
-        hazard_rect.x = hazard_frame * hazard.width / 8;
-        hazard_rect.y = hazard_frame_go_down * hazard.height / 8;
-        DrawTextureRec(scarfy, scarfy_rect, scarfy_pos, WHITE);
-        DrawTextureRec(hazard, hazard_rect, hazard_pos, BLUE);
-        if(scarfy_running_time >= scarfy_update_time) {
-            scarfy_frame = (scarfy_frame + 1) % 6;
-            scarfy_running_time = 0.0f;
+        scarfy_data.rectangle.x = scarfy_data.frame * scarfy.width / 6;
+        hazard_data.rectangle.x = hazard_data.frame * hazard.width / 8;
+        DrawTextureRec(scarfy, scarfy_data.rectangle, scarfy_data.position, WHITE);
+        DrawTextureRec(hazard, hazard_data.rectangle, hazard_data.position, WHITE);
+        if(scarfy_data.running_time >= scarfy_update_time) {
+            scarfy_data.frame = (scarfy_data.frame + 1) % 6;
+            scarfy_data.running_time = 0.0f;
         }
 
         if(global_running_time >= hazard_update_time) {
             global_running_time = 0.0f;
-            hazard_frame = (hazard_frame + 1) % 8;
-            if(hazard_frame == 0) 
-               hazard_frame_go_down = (hazard_frame_go_down + 1) % 7;
+            hazard_data.frame = (hazard_data.frame + 1) % 8;
         }
 
         if(hazard_cooldown_time >= HAZARD_COOLDOWN_TIME) {
             hazard_cooldown_time = 0.0f;
-            hazard_pos.x = window_width;
+            hazard_data.position.x = window_width;
         }
 
         stop = WindowShouldClose();
