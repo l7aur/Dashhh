@@ -1,5 +1,6 @@
 #include "raylib.h"
 #include <iostream>
+#include <unistd.h>
 
 //macros
 #define BACKGROUND_COLOR BLACK
@@ -12,6 +13,7 @@
 #define BACKGROUND3_VELOCITY 800.0f
 #define BACKGROUND_SCALING_FACTOR 3.3f
 #define MY_TINT WHITE
+#define COUNTDOWN 3.0f
 
 //types
 struct animation_data {
@@ -27,6 +29,7 @@ const int window_height = 600;
 const int window_width = 800;
 const float scarfy_update_time = 1.0 / 12.0;
 const float hazard_update_time = 1.0 / 32.0;
+const float hazard_padding = 40.0f;
 
 //checks if something is on the ground
 bool is_on_ground(animation_data data) {
@@ -44,15 +47,13 @@ void animate(Texture2D texture, animation_data& data, float update_time) {
 }
 
 //computes the new y position for a hazard
-void compute_hazard_line(float& current_hazard_cooldown_time, animation_data& hazard_data, int posY) {
-    if(current_hazard_cooldown_time >= HAZARD_COOLDOWN_TIME) {
-            current_hazard_cooldown_time = 0.0f;
-            hazard_data.position.x = window_width;
-            if(rand() % 2)
-                hazard_data.position.y = posY;
-            else
-                hazard_data.position.y = window_height - hazard_data.rectangle.height;
-        }
+void compute_hazard_line(animation_data& hazard_data, int posY) {
+    hazard_data.position.x = window_width;
+    if(rand() % 2)
+        hazard_data.position.y = posY;
+    else
+        hazard_data.position.y = window_height - hazard_data.rectangle.height;
+        
 }
 
 void move_background(Texture2D background, float& x, float delta_time, float velocity, float scaling_factor) {
@@ -68,9 +69,9 @@ int main() {
     SetTargetFPS(80);
 
     //miscellaneous variables
-    bool stop = false;
     float current_velocity = STARTING_VELOCITY;
     float hazard_cooldown_time = 0.0f; //how much until next hazard appears
+    float countdown = COUNTDOWN;
 
     //hazard variables
     Texture2D hazard = LoadTexture("textures\\12_nebula_spritesheet.png");
@@ -103,7 +104,7 @@ int main() {
     Texture2D background3 = LoadTexture("textures\\far-buildings.png");
     float bg3_x = 0.0f;
 
-    while(!stop) {
+    while(!WindowShouldClose()) {
         BeginDrawing();
         ClearBackground(BACKGROUND_COLOR);
 
@@ -124,10 +125,11 @@ int main() {
         //update timers
         hazard_data.running_time += dT;
         hazard_cooldown_time += dT;
+        countdown -= dT;
 
         //update velocities
         current_velocity += GRAVITY * dT;
-        hazard_data.position.x += hazard_ox_velocity * dT;
+        if(countdown <= 0) hazard_data.position.x += hazard_ox_velocity * dT;
         scarfy_data.position.y += current_velocity * dT;
         
         //cannot go below the viewport
@@ -143,13 +145,24 @@ int main() {
 
         //animate
         animate(scarfy, scarfy_data, scarfy_update_time);
-        animate(hazard, hazard_data, hazard_update_time);
+        if(countdown <= 0) animate(hazard, hazard_data, hazard_update_time);
 
         //compute new hazard if needed
-        compute_hazard_line(hazard_cooldown_time, hazard_data, 
-                            window_height - scarfy_data.rectangle.height - hazard_data.rectangle.height);
+        if(hazard_cooldown_time >= HAZARD_COOLDOWN_TIME) {
+            compute_hazard_line(hazard_data, window_height - scarfy_data.rectangle.height - hazard_data.rectangle.height);
+            hazard_cooldown_time = 0.0f;
+        }
 
-        stop = WindowShouldClose();
+        //collision detection
+        if(CheckCollisionRecs(Rectangle{scarfy_data.position.x, scarfy_data.position.y,
+                                        scarfy_data.rectangle.width, scarfy_data.rectangle.height},
+                              Rectangle{hazard_data.position.x + hazard_padding, hazard_data.position.y + hazard_padding,
+                                        hazard_data.rectangle.width - hazard_padding, hazard_data.rectangle.height - hazard_padding} 
+                            ) == true){
+            DrawText("Ana misses me...", 150, window_height / 2, 64, WHITE);
+            
+        }
+
         EndDrawing();
     }
 
