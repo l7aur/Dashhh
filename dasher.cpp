@@ -7,6 +7,11 @@
 #define UPWARD_IMPULSE -2'000.0f
 #define GRAVITY 8'000.0f
 #define HAZARD_COOLDOWN_TIME 3.0f
+#define BACKGROUND1_VELOCITY 200.0f
+#define BACKGROUND2_VELOCITY 400.0f
+#define BACKGROUND3_VELOCITY 800.0f
+#define BACKGROUND_SCALING_FACTOR 3.3f
+#define MY_TINT WHITE
 
 //types
 struct animation_data {
@@ -31,7 +36,7 @@ bool is_on_ground(animation_data data) {
 //animates a texture
 void animate(Texture2D texture, animation_data& data, float update_time) {
     data.rectangle.x = data.frame * data.rectangle.width;
-    DrawTextureRec(texture, data.rectangle, data.position, WHITE);
+    DrawTextureRec(texture, data.rectangle, data.position, MY_TINT);
     if(data.running_time >= update_time) {
         data.frame = (data.frame + 1) % ((int)(texture.width / data.rectangle.width));
         data.running_time = 0.0f;
@@ -50,6 +55,14 @@ void compute_hazard_line(float& current_hazard_cooldown_time, animation_data& ha
         }
 }
 
+void move_background(Texture2D background, float& x, float delta_time, float velocity, float scaling_factor) {
+    DrawTextureEx(background, {x, 0.0f}, 0.0f, BACKGROUND_SCALING_FACTOR, MY_TINT);
+    DrawTextureEx(background, {x + background.width * BACKGROUND_SCALING_FACTOR, 0.0f}, 0.0f, BACKGROUND_SCALING_FACTOR, MY_TINT);
+    x -= velocity * delta_time;
+    if(x + background.width * BACKGROUND_SCALING_FACTOR <= 0)
+        x = 0.0f;
+}
+
 int main() {
     InitWindow(window_width, window_height, "DASHHH");
     SetTargetFPS(80);
@@ -57,7 +70,6 @@ int main() {
     //miscellaneous variables
     bool stop = false;
     float current_velocity = STARTING_VELOCITY;
-    float global_running_time = 0.0f;
     float hazard_cooldown_time = 0.0f; //how much until next hazard appears
 
     //hazard variables
@@ -81,11 +93,26 @@ int main() {
         0.0f //running time
     };
     
+    //background
+    Texture2D background1 = LoadTexture("textures\\foreground.png");
+    float bg1_x = 0.0f;
+
+    Texture2D background2 = LoadTexture("textures\\back-buildings.png");
+    float bg2_x = 0.0f;
+
+    Texture2D background3 = LoadTexture("textures\\far-buildings.png");
+    float bg3_x = 0.0f;
+
     while(!stop) {
         BeginDrawing();
         ClearBackground(BACKGROUND_COLOR);
 
         float dT = GetFrameTime();
+
+        //draw and animate background
+        move_background(background3, bg1_x, dT, BACKGROUND1_VELOCITY, BACKGROUND_SCALING_FACTOR);
+        move_background(background2, bg2_x, dT, BACKGROUND2_VELOCITY, BACKGROUND_SCALING_FACTOR);
+        move_background(background1, bg3_x, dT, BACKGROUND3_VELOCITY, BACKGROUND_SCALING_FACTOR);
 
         //no double jumps
         if(is_on_ground(scarfy_data)) {
@@ -95,7 +122,7 @@ int main() {
         }
 
         //update timers
-        global_running_time += dT;
+        hazard_data.running_time += dT;
         hazard_cooldown_time += dT;
 
         //update velocities
@@ -119,7 +146,8 @@ int main() {
         animate(hazard, hazard_data, hazard_update_time);
 
         //compute new hazard if needed
-        compute_hazard_line(hazard_cooldown_time, hazard_data, window_height - scarfy_data.rectangle.height - hazard_data.rectangle.height);
+        compute_hazard_line(hazard_cooldown_time, hazard_data, 
+                            window_height - scarfy_data.rectangle.height - hazard_data.rectangle.height);
 
         stop = WindowShouldClose();
         EndDrawing();
@@ -127,6 +155,9 @@ int main() {
 
     UnloadTexture(scarfy);
     UnloadTexture(hazard);
+    UnloadTexture(background1);
+    UnloadTexture(background2);
+    UnloadTexture(background3);
     CloseWindow();
 
     return 0;
