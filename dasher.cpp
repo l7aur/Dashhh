@@ -20,7 +20,29 @@ const int window_width = 800;
 const float scarfy_update_time = 1.0 / 12.0;
 const float hazard_update_time = 1.0 / 32.0;
 
+bool is_on_ground(animation_data data) {
+    return (data.position.y == window_height - data.rectangle.height);
+}
 
+void animate(Texture2D texture, animation_data& data, float update_time) {
+    data.rectangle.x = data.frame * data.rectangle.width;
+    DrawTextureRec(texture, data.rectangle, data.position, WHITE);
+    if(data.running_time >= update_time) {
+        data.frame = (data.frame + 1) % ((int)(texture.width / data.rectangle.width));
+        data.running_time = 0.0f;
+    }
+}
+
+void compute_hazard_line(float& current_hazard_cooldown_time, animation_data& hazard_data, int posY) {
+    if(current_hazard_cooldown_time >= HAZARD_COOLDOWN_TIME) {
+            current_hazard_cooldown_time = 0.0f;
+            hazard_data.position.x = window_width;
+            if(rand() % 2)
+                hazard_data.position.y = posY;
+            else
+                hazard_data.position.y = window_height - hazard_data.rectangle.height;
+        }
+}
 
 int main() {
     InitWindow(window_width, window_height, "DASHHH");
@@ -58,15 +80,15 @@ int main() {
 
         float dT = GetFrameTime();
 
-        if(scarfy_data.position.y == window_height - scarfy.height)
+        if(is_on_ground(scarfy_data)) {
             scarfy_data.running_time += dT;
+            if(IsKeyPressed(KEY_SPACE))
+                current_velocity += UPWARD_IMPULSE;
+        }
 
         global_running_time += dT;
         hazard_cooldown_time += dT;
 
-        if(IsKeyPressed(KEY_SPACE) && scarfy_data.position.y == window_height - scarfy.height) {
-            current_velocity = UPWARD_IMPULSE;
-        }
         current_velocity += GRAVITY * dT;
 
         scarfy_data.position.y += current_velocity * dT;
@@ -80,24 +102,10 @@ int main() {
         }
         hazard_data.position.x += hazard_ox_velocity * dT;
         
-        scarfy_data.rectangle.x = scarfy_data.frame * scarfy.width / 6;
-        hazard_data.rectangle.x = hazard_data.frame * hazard.width / 8;
-        DrawTextureRec(scarfy, scarfy_data.rectangle, scarfy_data.position, WHITE);
-        DrawTextureRec(hazard, hazard_data.rectangle, hazard_data.position, WHITE);
-        if(scarfy_data.running_time >= scarfy_update_time) {
-            scarfy_data.frame = (scarfy_data.frame + 1) % 6;
-            scarfy_data.running_time = 0.0f;
-        }
+        animate(scarfy, scarfy_data, scarfy_update_time);
+        animate(hazard, hazard_data, hazard_update_time);
 
-        if(global_running_time >= hazard_update_time) {
-            global_running_time = 0.0f;
-            hazard_data.frame = (hazard_data.frame + 1) % 8;
-        }
-
-        if(hazard_cooldown_time >= HAZARD_COOLDOWN_TIME) {
-            hazard_cooldown_time = 0.0f;
-            hazard_data.position.x = window_width;
-        }
+        compute_hazard_line(hazard_cooldown_time, hazard_data, window_height - scarfy_data.rectangle.height - hazard_data.rectangle.height);
 
         stop = WindowShouldClose();
         EndDrawing();
