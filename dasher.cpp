@@ -14,13 +14,13 @@
 #define BACKGROUND_SCALING_FACTOR 3.3f
 #define MY_TINT WHITE
 #define COUNTDOWN 3.0f
+#define SCORE_SIZE 10
 
 //types
 struct animation_data {
     Rectangle rectangle;
     Vector2 position;
     int frame;
-    float update_time;
     float running_time;
 };
 
@@ -64,6 +64,15 @@ void move_background(Texture2D background, float& x, float delta_time, float vel
         x = 0.0f;
 }
 
+void get_score(char * score, int x) {
+    if(x == 0) return;
+    int dim = SCORE_SIZE;
+    while(x) {
+        score[--dim] = x % 10 + '0';
+        x /= 10;
+    }
+}
+
 int main() {
     InitWindow(window_width, window_height, "DASHHH");
     SetTargetFPS(80);
@@ -72,6 +81,15 @@ int main() {
     float current_velocity = STARTING_VELOCITY;
     float hazard_cooldown_time = 0.0f; //how much until next hazard appears
     float countdown = COUNTDOWN;
+    bool game_ended = false;
+    int text_posY = -120;
+    unsigned int expect_to_end = 0;
+    char score[SCORE_SIZE + 1];
+    score[SCORE_SIZE] = '\0';
+    for(int i = 0; i < SCORE_SIZE; i++)
+        score[i] = '0';
+    unsigned int score_points = 0;
+    float difficulty = 1.0f;
 
     //hazard variables
     Texture2D hazard = LoadTexture("textures\\12_nebula_spritesheet.png");
@@ -80,7 +98,6 @@ int main() {
         {0.0f, 0.0f, hazard.width / 8.0f, hazard.height / 8.0f},    //rectangle
         {window_width, window_height - hazard_data.rectangle.height},   //position
         0,  //frame
-        0.0f,   //update time
         0.0f    //running time
     };
 
@@ -88,9 +105,8 @@ int main() {
     Texture2D scarfy = LoadTexture("textures\\scarfy.png");
     animation_data scarfy_data = {
         {0.0f, 0.0f, scarfy.width / 6.0f, (float)scarfy.height},    //rectangle
-        {(window_width - scarfy_data.rectangle.width) / 2, window_height - scarfy_data.rectangle.height},   //position
+        {(window_width - scarfy_data.rectangle.width) / 2 - 100, window_height - scarfy_data.rectangle.height},   //position
         0, //frame
-        0.0f, //update time
         0.0f //running time
     };
     
@@ -108,7 +124,7 @@ int main() {
         BeginDrawing();
         ClearBackground(BACKGROUND_COLOR);
 
-        float dT = GetFrameTime();
+        float dT = GetFrameTime() * difficulty;
 
         //draw and animate background
         move_background(background3, bg1_x, dT, BACKGROUND1_VELOCITY, BACKGROUND_SCALING_FACTOR);
@@ -125,13 +141,16 @@ int main() {
         //update timers
         hazard_data.running_time += dT;
         hazard_cooldown_time += dT;
-        countdown -= dT;
+        if(countdown > 0) countdown -= dT;
 
         //update velocities
-        current_velocity += GRAVITY * dT;
-        if(countdown <= 0) hazard_data.position.x += hazard_ox_velocity * dT;
-        scarfy_data.position.y += current_velocity * dT;
-        
+        if(!game_ended) {
+            current_velocity += GRAVITY * dT;
+            if(countdown <= 0 && hazard_data.position.x + hazard_data.rectangle.width > 0) 
+                hazard_data.position.x += hazard_ox_velocity * dT;
+            scarfy_data.position.y += current_velocity * dT;
+        }
+
         //cannot go below the viewport
         if(scarfy_data.position.y > window_height - scarfy.height) {
             scarfy_data.position.y = window_height - scarfy.height;
@@ -148,21 +167,44 @@ int main() {
         if(countdown <= 0) animate(hazard, hazard_data, hazard_update_time);
 
         //compute new hazard if needed
-        if(hazard_cooldown_time >= HAZARD_COOLDOWN_TIME) {
+        if(!game_ended && hazard_cooldown_time >= HAZARD_COOLDOWN_TIME) {
             compute_hazard_line(hazard_data, window_height - scarfy_data.rectangle.height - hazard_data.rectangle.height);
             hazard_cooldown_time = 0.0f;
+
+            //compute score and increase difficulty
+            score_points++;
+            difficulty += 0.05f;
         }
 
         //collision detection
-        if(CheckCollisionRecs(Rectangle{scarfy_data.position.x, scarfy_data.position.y,
+        if(!game_ended && CheckCollisionRecs(Rectangle{scarfy_data.position.x, scarfy_data.position.y,
                                         scarfy_data.rectangle.width, scarfy_data.rectangle.height},
                               Rectangle{hazard_data.position.x + hazard_padding, hazard_data.position.y + hazard_padding,
                                         hazard_data.rectangle.width - hazard_padding, hazard_data.rectangle.height - hazard_padding} 
                             ) == true){
-            DrawText("Ana misses me...", 150, window_height / 2, 64, WHITE);
-            
+            game_ended = true;
+
+            //compute score
+            score_points--;
         }
 
+        if(game_ended) {
+            DrawText(" Game   over! \n\n\n\nYour score is\n\n\n\n", (window_width >> 2) + 30, text_posY, 64, WHITE);
+            DrawText(score, (window_width >> 2) + 65, text_posY + 120, 64, WHITE);
+            if(text_posY < window_height) text_posY += 2;
+            if(text_posY > (window_height >> 1) && !expect_to_end)
+                expect_to_end = 1;
+        }
+
+        //force stop
+        if(expect_to_end > 0)
+            expect_to_end++;
+        if(expect_to_end > 700)
+            break;
+
+        //display score
+        get_score(score, score_points);
+        if(!game_ended) DrawText(score, 10, 10, 24, WHITE);
         EndDrawing();
     }
 
