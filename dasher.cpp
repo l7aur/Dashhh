@@ -189,8 +189,8 @@ int main() {
         }
 
         if(game_ended) {
-            DrawText(" Game   over! \n\n\n\nYour score is\n\n\n\n", (window_width >> 2) + 30, text_posY, 64, WHITE);
-            DrawText(score, (window_width >> 2) + 65, text_posY + 120, 64, WHITE);
+            DrawText(" Game   over! \n\n\n\nYour score is\n\n\n\n", (window_width >> 2) + 20, text_posY, 64, WHITE);
+            DrawText(score, (window_width >> 2) + 50, text_posY + 120, 64, WHITE);
             if(text_posY < window_height) text_posY += 2;
             if(text_posY > (window_height >> 1) && !expect_to_end)
                 expect_to_end = 1;
