@@ -43,3 +43,4 @@ The game assets and/or sprites were either provided by the course as resources o
 ### Further Developments
 
 - more types of hazards
+- sound FX
