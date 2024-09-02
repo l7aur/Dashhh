@@ -2,19 +2,24 @@
 #include <iostream>
 #include <unistd.h>
 
-//macros
-#define BACKGROUND_COLOR BLACK
-#define STARTING_VELOCITY 0.0f
-#define UPWARD_IMPULSE -2'000.0f
-#define GRAVITY 8'000.0f
-#define HAZARD_COOLDOWN_TIME 3.0f
-#define BACKGROUND1_VELOCITY 200.0f
-#define BACKGROUND2_VELOCITY 400.0f
-#define BACKGROUND3_VELOCITY 800.0f
-#define BACKGROUND_SCALING_FACTOR 3.3f
-#define MY_TINT WHITE
-#define COUNTDOWN 3.0f
-#define SCORE_SIZE 10
+//constants
+const int window_height = 600;
+const int window_width = 800;
+const float scarfy_update_time = 1.0 / 12.0;
+const float hazard_update_time = 1.0 / 32.0;
+const float hazard_padding = 40.0f;
+const float STARTING_VELOCITY = 0.0f;
+const float UPWARD_IMPULSE = -2'000.0f;
+const float GRAVITY = 8'000.0f;
+const float HAZARD_COOLDOWN_TIME = 3.0f;
+const float BACKGROUND1_VELOCITY = 200.0f;
+const float BACKGROUND2_VELOCITY = 400.0f;
+const float BACKGROUND3_VELOCITY = 800.0f;
+const float BACKGROUND_SCALING_FACTOR = 3.3f;
+const Color BACKGROUND_COLOR = BLACK;
+const Color MY_TINT = WHITE;
+const float COUNTDOWN = 3.0f;
+const int SCORE_SIZE = 10;
 
 //types
 struct animation_data {
@@ -23,13 +28,6 @@ struct animation_data {
     int frame;
     float running_time;
 };
-
-//constants
-const int window_height = 600;
-const int window_width = 800;
-const float scarfy_update_time = 1.0 / 12.0;
-const float hazard_update_time = 1.0 / 32.0;
-const float hazard_padding = 40.0f;
 
 //checks if something is on the ground
 bool is_on_ground(animation_data data) {
