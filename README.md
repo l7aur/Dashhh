@@ -12,7 +12,7 @@
 
 ### Preview
 
-*video*
+https://github.com/user-attachments/assets/b3686973-57ab-41fc-aba6-a68653b13219
 
 ### Description
 
