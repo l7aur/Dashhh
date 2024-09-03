@@ -37,9 +37,6 @@ The game is build from scratch based on the following [Udemy course](https://www
 
 The game assets and/or sprites were either provided by the course as resources or downloaded from the web - [itch.io](https://itch.io/game-assets).
 
-- [Asset 1]()
-- [Asset 2]()
-
 ### Further Developments
 
 - more types of hazards
